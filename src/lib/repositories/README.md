@@ -51,6 +51,7 @@ Our ids will never get that big, so `toUser` and `toCard` convert them with `Num
 
 ### `user-repository.ts`
 
+- `findUserByEmail` finds the account NeetCode sync adds problems to. Like every other lookup, it leaves the hash out.
 - `findUserWithPasswordByEmail` is the **only** function that returns the password hash, and it's only used by sign-in.
   Everything else gets a `User` with no hash in it, so the hash can't leak into a page by accident.
 - `createUser` uses `INSERT ... ON CONFLICT (email) DO NOTHING RETURNING ...`. If the email is taken, no row comes back, and the function returns `null`.
@@ -60,6 +61,7 @@ Our ids will never get that big, so `toUser` and `toCard` convert them with `Num
 
 - `saveProblem` uses `ON CONFLICT (number) DO UPDATE` (an **upsert**: insert, or update if it already exists). If two people add the same new problem
   at the same moment, neither request fails.
+- `findSavedProblemBySlug` finds a saved problem by its URL name, so NeetCode sync can skip asking LeetCode about problems we already know.
 
 ### `card-repository.ts`
 

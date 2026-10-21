@@ -50,6 +50,14 @@ export async function findUserById(userId: number): Promise<User | null> {
   return toUser(rows[0]);
 }
 
+export async function findUserByEmail(email: string): Promise<User | null> {
+  const rows = await query<UserRow>(`SELECT ${USER_COLUMNS} FROM users WHERE email = $1`, [email]);
+  if (rows.length === 0) {
+    return null;
+  }
+  return toUser(rows[0]);
+}
+
 export async function findUserWithPasswordByEmail(email: string): Promise<UserWithPassword | null> {
   const rows = await query<UserRow>(`SELECT ${USER_COLUMNS} FROM users WHERE email = $1`, [email]);
   if (rows.length === 0) {

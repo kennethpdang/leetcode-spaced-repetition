@@ -104,6 +104,46 @@ async function findWithProblemList(problemNumber: number): Promise<LeetcodeProbl
 
 const PROBLEM_SOURCES: ProblemSource[] = [findWithGraphql, findWithProblemList];
 
+const QUESTION_BY_SLUG_QUERY = `
+  query questionTitle($titleSlug: String!) {
+    question(titleSlug: $titleSlug) {
+      questionFrontendId
+      title
+      titleSlug
+      difficulty
+    }
+  }
+`;
+
+// Looks up a problem by its name in the URL (e.g. "binary-search"), for problems that arrive from NeetCode.
+export async function findLeetcodeProblemBySlug(slug: string): Promise<LeetcodeProblem | null> {
+  try {
+    const response = await fetch("https://leetcode.com/graphql", {
+      method: "POST",
+      headers: LEETCODE_HEADERS,
+      cache: "no-store",
+      body: JSON.stringify({ query: QUESTION_BY_SLUG_QUERY, variables: { titleSlug: slug } }),
+    });
+    if (!response.ok) {
+      return null;
+    }
+    const body = await response.json();
+    const question: SearchQuestion | null = body?.data?.question ?? null;
+    if (!question) {
+      return null;
+    }
+    return {
+      number: Number(question.questionFrontendId),
+      title: question.title,
+      slug: question.titleSlug,
+      difficulty: question.difficulty,
+    };
+  } catch (error) {
+    console.error("LeetCode lookup by name failed.", error);
+    return null;
+  }
+}
+
 export async function findLeetcodeProblem(problemNumber: number): Promise<LeetcodeProblem | null> {
   for (let sourceIndex = 0; sourceIndex < PROBLEM_SOURCES.length; sourceIndex++) {
     try {

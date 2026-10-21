@@ -9,6 +9,7 @@ Next.js uses **file-based routing**: the folders inside `app/` *are* the website
 | `layout.tsx` | (wraps every page) | The `<html>` and `<body>` tags, page title, and the CSS import. |
 | `globals.css` | — | All styling for the whole site. |
 | `actions/` | — | Server actions. Not pages; see [`actions/README.md`](actions/README.md). |
+| `api/github-webhook/route.ts` | `/api/github-webhook` | Where GitHub sends NeetCode sync messages. Not a page. |
 
 A file must be named exactly `page.tsx` to become a page. Any other file in this folder is just a normal module.
 
@@ -63,6 +64,26 @@ Each page checks the session itself at the top (`getCurrentUser()` then `redirec
 With only two pages that's the simplest thing that works, and the check sits right next to the code it protects.
 **The actions check the session again on their own**, because a request can reach a server action without going through a page.
 Never rely on "the button isn't shown" as security.
+
+## `api/github-webhook/route.ts`: the NeetCode sync endpoint
+
+A file named `route.ts` is a **Route Handler**: instead of a page, it answers raw HTTP requests. Exporting a function named `POST`
+handles POST requests to `/api/github-webhook`. GitHub is the only caller, so there's no session cookie to check.
+The **signature** is the check instead. In order:
+
+1. Both `GITHUB_WEBHOOK_SECRET` and `NEETCODE_SYNC_EMAIL` must be set, or it answers 500 with a message saying so.
+2. It reads the body as raw text and checks the `X-Hub-Signature-256` header (`isValidSignature`). A bad signature gets 401, and nothing else runs.
+3. It parses the body as JSON. If GitHub was set to send form data instead, it answers 400 and says to switch the content type.
+   This happens before the `ping` check on purpose, so the mistake shows up on GitHub's very first test message.
+4. `ping` (GitHub's test message when you add the webhook) answers "Connected." Any event other than `push` is ignored.
+5. Pushes to any branch but main are ignored.
+6. It finds the account by email, calls `syncNeetcodeSolves`, and calls `revalidatePath("/")` so your list is fresh next time you open it.
+7. It answers with the summary (`added`, `alreadyTracked`, `notMatched`), which GitHub shows under the webhook's **Recent Deliveries**.
+
+Ignored events still answer 200. GitHub marks anything else as a failed delivery, and an ignored event isn't a failure.
+
+`export const maxDuration = 60` lets the function run for up to a minute, which a big Bulk Sync can need.
+One problem at a time (the normal case) takes a second or two.
 
 ## `layout.tsx`
 
