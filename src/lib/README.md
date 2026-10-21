@@ -19,7 +19,7 @@ The pure rules are the heart of the app, so they come first.
 ### The data
 
 ```ts
-export const INTERVAL_DAYS: readonly number[] = [1, 2, 4, 8, 16, 32, 64, 128, 256, 356, 356, 356, 1068];
+export const INTERVAL_DAYS: readonly number[] = [1, 2, 4, 8, 16, 32, 64, 128, 256, 365, 365, 365, 1068];
 ```
 
 A card's **level** is an index into this list. A card at level 4 has a gap of `INTERVAL_DAYS[4]` = 16 days.

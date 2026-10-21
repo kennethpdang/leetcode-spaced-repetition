@@ -15,6 +15,7 @@ in `src/lib/spaced-repetition.ts`, `src/lib/dates.ts` and `src/lib/card-view.ts`
 
 | Test | Rule |
 | --- | --- |
+| follows the agreed interval list, with three one-year steps | The schedule is exactly 1, 2, 4 … 256, 365, 365, 365, 1068. |
 | makes a newly added problem due tomorrow | Adding counts as the first solve (1 day). |
 | climbs 1, 2, 4, 8, 16 when solved on time | Each solve moves up one level. |
 | still moves up when solved before the due date | Solving early counts. |

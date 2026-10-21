@@ -11,6 +11,10 @@ function solvedDaysAgo(level: number, dayCount: number) {
 }
 
 describe("schedule", () => {
+  it("follows the agreed interval list, with three one-year steps", () => {
+    expect(INTERVAL_DAYS).toEqual([1, 2, 4, 8, 16, 32, 64, 128, 256, 365, 365, 365, 1068]);
+  });
+
   it("makes a newly added problem due tomorrow", () => {
     const status = getCardStatus({ level: 0, lastSolvedOn: TODAY }, TODAY);
     expect(status.dueOn).toBe("2026-10-22");
