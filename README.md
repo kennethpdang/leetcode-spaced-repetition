@@ -152,12 +152,13 @@ flowchart LR
     Site --> DB[(Your problem list)]
 ```
 
-Nothing logs in to NeetCode or LeetCode on your behalf, and nothing scrapes either site. It only uses features NeetCode and GitHub offer for this.
+Sync never signs in to NeetCode or LeetCode for you, and never reads either site. It only uses features NeetCode and GitHub offer for this.
+(Looking up a new problem's title on LeetCode works exactly as it does when you type a number.)
 
 ### Only correct solutions count
 
 The site can't run your code, so it relies on NeetCode to only send accepted solutions. **This depends on one NeetCode setting**:
-on [neetcode.io/profile/github](https://neetcode.io/profile/github), set the **status filter** to **Accepted only**.
+on [neetcode.io/profile/github](https://neetcode.io/profile/github), set the **status filter** to sync **accepted** submissions only.
 If it's set to "All", wrong answers get pushed to GitHub too, and the site has no way to tell them apart.
 
 ### Setting it up (one time, about 10 minutes)
@@ -165,8 +166,8 @@ If it's set to "All", wrong answers get pushed to GitHub too, and the site has n
 **1. Turn on NeetCode GitHub Sync.**
 
 1. Sign in on [neetcode.io](https://neetcode.io), open [neetcode.io/profile/github](https://neetcode.io/profile/github), and connect your GitHub account.
-   NeetCode creates a repository called `neetcode-submissions`.
-2. Turn on **Auto-commit**, and set the status filter to **Accepted only**.
+   NeetCode creates a repository for your solutions, called `neetcode-submissions` unless you rename it.
+2. Turn on **Auto-commit**, and set the status filter to accepted submissions only.
 
 **2. Make a webhook secret.** Like the session secret, it's a long random string, made the same way (`openssl rand -hex 32`, or a password manager).
 GitHub uses it to sign every message, and the site rejects any message without a matching signature, so nobody else can add problems to your list.
@@ -215,6 +216,15 @@ Open the webhook on GitHub (**Settings → Webhooks →** your webhook **→ Rec
 [`src/lib/neetcode-problems.ts`](src/lib/neetcode-problems.ts). Add the missing one there with its LeetCode number and push.
 Any name that isn't in that table is looked up on LeetCode as is, which works whenever NeetCode uses LeetCode's own name.
 You can also press **Redeliver** on a delivery after the fix to add the problem.
+
+Other answers you might see there:
+
+| Answer | What to do |
+| --- | --- |
+| 401 "The signature doesn't match" | The secret on the GitHub webhook and `GITHUB_WEBHOOK_SECRET` in Vercel differ. Make them the same and redeploy. |
+| 400 "Set the webhook's content type to application/json" | Edit the webhook on GitHub and change **Content type** to `application/json`. |
+| 500 "... must both be set" or "No account uses the email" | Check the two Vercel variables, then redeploy. |
+| Timed out, after a Bulk Sync | GitHub stops waiting after 10 seconds. Press **Redeliver** until it says "Synced." Each try keeps what earlier tries added, and problems already in your list are skipped. |
 
 ## Updating the site
 

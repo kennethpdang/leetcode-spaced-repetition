@@ -4,6 +4,9 @@ import { getSubmittedNeetcodeSlugs, isPushToDefaultBranch, isValidSignature, Pus
 import { findUserByEmail } from "@/lib/repositories/user-repository";
 import { syncNeetcodeSolves } from "@/lib/services/neetcode-sync-service";
 
+// A NeetCode Bulk Sync can bring dozens of problems at once, and each new one is looked up on LeetCode.
+export const maxDuration = 60;
+
 function reply(status: number, message: string, details: object = {}): Response {
   return Response.json({ message: message, ...details }, { status: status });
 }
@@ -20,6 +23,14 @@ export async function POST(request: Request): Promise<Response> {
     return reply(401, "The signature doesn't match. Check that the webhook secret is the same in GitHub and Vercel.");
   }
 
+  // Read the body before answering GitHub's test message, so a wrong content type shows up as soon as the webhook is added.
+  let pushEvent: PushEvent;
+  try {
+    pushEvent = JSON.parse(rawBody);
+  } catch {
+    return reply(400, "Set the webhook's content type to application/json in GitHub.");
+  }
+
   const eventName = request.headers.get("x-github-event");
   if (eventName === "ping") {
     return reply(200, "Connected.");
@@ -28,7 +39,6 @@ export async function POST(request: Request): Promise<Response> {
     return reply(200, "Ignored: only push events add problems.");
   }
 
-  const pushEvent: PushEvent = JSON.parse(rawBody);
   if (!isPushToDefaultBranch(pushEvent)) {
     return reply(200, "Ignored: not a push to the main branch.");
   }
