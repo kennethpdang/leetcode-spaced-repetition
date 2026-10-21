@@ -2,7 +2,7 @@ import { addDays, daysBetween } from "@/lib/dates";
 
 // Days until a problem is due again, one entry per level.
 // Edit this list to change the schedule. After the last entry, the last value repeats forever.
-export const INTERVAL_DAYS: readonly number[] = [1, 2, 4, 8, 16, 32, 64, 128, 256, 365, 365, 365, 1068];
+export const INTERVAL_DAYS: readonly number[] = [1, 2, 4, 8, 16, 32, 64, 128, 256, 365, 365, 365, 1095];
 
 const LAST_LEVEL = INTERVAL_DAYS.length - 1;
 

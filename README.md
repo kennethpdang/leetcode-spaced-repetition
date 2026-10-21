@@ -60,7 +60,7 @@ The colors match the Claude workspace: warm off-white background, near-black tex
 The schedule is one list in [`src/lib/spaced-repetition.ts`](src/lib/spaced-repetition.ts):
 
 ```ts
-export const INTERVAL_DAYS: readonly number[] = [1, 2, 4, 8, 16, 32, 64, 128, 256, 365, 365, 365, 1068];
+export const INTERVAL_DAYS: readonly number[] = [1, 2, 4, 8, 16, 32, 64, 128, 256, 365, 365, 365, 1095];
 ```
 
 Each problem remembers two things: its **level** (a position in that list) and the **last day you solved it**.
@@ -68,7 +68,7 @@ Everything else is calculated from those two values.
 
 1. **Adding a problem counts as your first solve.** It starts at level 0, so it's due again in `INTERVAL_DAYS[0]` = 1 day.
 2. **Each solve moves it up one level**: 2 days, then 4, then 8, and so on.
-   After the last entry it stays at 1068 days forever.
+   After the last entry it stays at 1095 days forever.
 3. **One step per day.** Once you've solved a problem today, you can't solve it again until tomorrow.
 4. **Solving early still counts.** If a problem is due in 4 days and you solve it today, it still moves up.
 5. **Falling far behind drops it one level.** If a problem is overdue by *more than its current gap plus the gap before it*, it drops a level.

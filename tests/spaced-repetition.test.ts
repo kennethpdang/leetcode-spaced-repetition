@@ -12,7 +12,7 @@ function solvedDaysAgo(level: number, dayCount: number) {
 
 describe("schedule", () => {
   it("follows the agreed interval list, with three one-year steps", () => {
-    expect(INTERVAL_DAYS).toEqual([1, 2, 4, 8, 16, 32, 64, 128, 256, 365, 365, 365, 1068]);
+    expect(INTERVAL_DAYS).toEqual([1, 2, 4, 8, 16, 32, 64, 128, 256, 365, 365, 365, 1095]);
   });
 
   it("makes a newly added problem due tomorrow", () => {
@@ -41,10 +41,10 @@ describe("schedule", () => {
     expect(getLevelAfterSolve({ level: 3, lastSolvedOn: TODAY }, TODAY)).toBeNull();
   });
 
-  it("stays at 1068 days forever after the end of the list", () => {
+  it("stays at 1095 days forever after the end of the list", () => {
     const lastLevel = INTERVAL_DAYS.length - 1;
-    expect(INTERVAL_DAYS[lastLevel]).toBe(1068);
-    expect(getLevelAfterSolve(solvedDaysAgo(lastLevel, 1068), TODAY)).toBe(lastLevel);
+    expect(INTERVAL_DAYS[lastLevel]).toBe(1095);
+    expect(getLevelAfterSolve(solvedDaysAgo(lastLevel, 1095), TODAY)).toBe(lastLevel);
   });
 
   it("reports due today and overdue days", () => {

@@ -19,7 +19,7 @@ The pure rules are the heart of the app, so they come first.
 ### The data
 
 ```ts
-export const INTERVAL_DAYS: readonly number[] = [1, 2, 4, 8, 16, 32, 64, 128, 256, 365, 365, 365, 1068];
+export const INTERVAL_DAYS: readonly number[] = [1, 2, 4, 8, 16, 32, 64, 128, 256, 365, 365, 365, 1095];
 ```
 
 A card's **level** is an index into this list. A card at level 4 has a gap of `INTERVAL_DAYS[4]` = 16 days.
@@ -37,7 +37,7 @@ interface CardSchedule {
 ### The functions
 
 **`getIntervalDays(level)`** returns `INTERVAL_DAYS[level]`, but caps the level at the last index.
-This is how "1068 days forever" works: levels past the end all read the last entry.
+This is how "1095 days forever" works: levels past the end all read the last entry.
 
 **`getCardStatus(schedule, today)`** computes everything the UI and the solve logic need, in one place:
 
