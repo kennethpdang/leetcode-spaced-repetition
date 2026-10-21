@@ -2,6 +2,7 @@
 
 A small website for reviewing LeetCode problems on a spaced repetition schedule.
 You type a problem number, the site looks up the problem's name, and it tells you when to solve it again.
+It can also add problems on its own: when you solve a problem on [NeetCode](https://neetcode.io), it shows up here automatically.
 Each time you solve a problem the gap before its next review grows, so problems you know well show up less and less often.
 
 This README covers what the site does, how to deploy it, how the code is organized, and why it was built this way.
@@ -20,6 +21,7 @@ Every folder also has its own README that goes deeper into the code inside it. A
 - [What the site does](#what-the-site-does)
 - [How the schedule works](#how-the-schedule-works)
 - [Setting it up on Vercel](#setting-it-up-on-vercel-one-time-about-15-minutes)
+- [Adding problems automatically from NeetCode](#adding-problems-automatically-from-neetcode)
 - [Updating the site](#updating-the-site)
 - [Running it on your own computer](#running-it-on-your-own-computer)
 - [The tech stack, and why](#the-tech-stack-and-why)
@@ -51,6 +53,9 @@ There's no "Sign in with Google". Accounts are email and password only, by desig
 - Next to every problem there's a **circle**. Tap it when you've solved the problem. A confirmation pops up ("Did you solve 200. Number of Islands? Its next review will be in 8 days.") so a stray tap doesn't count.
 - Once solved today, the circle turns green with a check and is locked until tomorrow.
 - A **Remove** button (also with a confirmation) in case you added the wrong number.
+
+If you turn on [NeetCode sync](#adding-problems-automatically-from-neetcode), problems you solve on NeetCode are added to this list by themselves,
+exactly as if you'd typed their number on the day you solved them.
 
 It works on phones, tablets and desktops, and follows your device's light or dark mode.
 The colors match the Claude workspace: warm off-white background, near-black text, and a muted terracotta accent.
@@ -130,8 +135,86 @@ The session secret is a long random password the site uses to sign your "you are
 Open the **Deployments** tab, click the **⋯** menu on the newest deployment, and choose **Redeploy**.
 When it finishes, open your site's address, click **Create an account**, and you're in.
 
-**Keep `DATABASE_URL` and `SESSION_SECRET` private.** Don't paste them into chats, issues or code.
+**Keep `DATABASE_URL` and `SESSION_SECRET` private** (and `GITHUB_WEBHOOK_SECRET`, if you set up NeetCode sync). Don't paste them into chats, issues or code.
 If one ever leaks, change it in Vercel and redeploy. Changing `SESSION_SECRET` signs everyone out, which is harmless.
+
+## Adding problems automatically from NeetCode
+
+NeetCode has no public API, but it has a **GitHub Sync** feature: every time you submit a solution, NeetCode saves it as a file in a
+GitHub repository of yours. GitHub can then send this site a message (a **webhook**) every time that repository changes.
+The site reads which problem the new file belongs to and adds it to your list.
+
+```mermaid
+flowchart LR
+    You["You solve a problem<br/>on neetcode.io"] --> NC["NeetCode GitHub Sync<br/>commits the solution"]
+    NC --> GH["Your neetcode-submissions<br/>repository on GitHub"]
+    GH -- "webhook (signed)" --> Site["This site<br/>/api/github-webhook"]
+    Site --> DB[(Your problem list)]
+```
+
+Nothing logs in to NeetCode or LeetCode on your behalf, and nothing scrapes either site. It only uses features NeetCode and GitHub offer for this.
+
+### Only correct solutions count
+
+The site can't run your code, so it relies on NeetCode to only send accepted solutions. **This depends on one NeetCode setting**:
+on [neetcode.io/profile/github](https://neetcode.io/profile/github), set the **status filter** to **Accepted only**.
+If it's set to "All", wrong answers get pushed to GitHub too, and the site has no way to tell them apart.
+
+### Setting it up (one time, about 10 minutes)
+
+**1. Turn on NeetCode GitHub Sync.**
+
+1. Sign in on [neetcode.io](https://neetcode.io), open [neetcode.io/profile/github](https://neetcode.io/profile/github), and connect your GitHub account.
+   NeetCode creates a repository called `neetcode-submissions`.
+2. Turn on **Auto-commit**, and set the status filter to **Accepted only**.
+
+**2. Make a webhook secret.** Like the session secret, it's a long random string, made the same way (`openssl rand -hex 32`, or a password manager).
+GitHub uses it to sign every message, and the site rejects any message without a matching signature, so nobody else can add problems to your list.
+
+**3. Tell Vercel about it.** In your Vercel project, open **Settings → Environment Variables** and add two variables:
+
+| Name | Value |
+| --- | --- |
+| `GITHUB_WEBHOOK_SECRET` | The secret from step 2. |
+| `NEETCODE_SYNC_EMAIL` | The email you sign in to this site with. Synced problems go to that account. |
+
+Then redeploy (**Deployments** → **⋯** on the newest one → **Redeploy**), so the site picks up the new variables.
+
+**4. Add the webhook on GitHub.**
+
+1. Open your `neetcode-submissions` repository on GitHub, then **Settings → Webhooks → Add webhook**.
+2. **Payload URL**: your site's address followed by `/api/github-webhook`, for example `https://your-site.vercel.app/api/github-webhook`.
+3. **Content type**: `application/json`.
+4. **Secret**: the same secret from step 2.
+5. **Which events**: leave it on **Just the push event**.
+6. Click **Add webhook**.
+
+GitHub immediately sends a test message. Refresh the page; a green check next to the webhook means the site answered "Connected."
+A red mark usually means the secret doesn't match or the site wasn't redeployed after step 3.
+
+**5. Try it.** Solve any problem on NeetCode, then reload your list. It should be there, marked as solved today.
+
+### What sync does and doesn't do
+
+- **A new problem** is added at level 0 (due tomorrow), the same as typing its number.
+- **A problem already in your list** is left alone. Mark reviews with the circle as usual.
+- **Bulk Sync** on NeetCode (pushing all your past solutions at once) adds every one of them as solved *today*, because the site can only
+  see when the push happened. That's fine for a first import, but expect a busy day of reviews tomorrow.
+- **Only the repository's main branch counts**, and only *new* submission files. Edits or deletions on GitHub change nothing here.
+
+### When a problem doesn't show up
+
+Open the webhook on GitHub (**Settings → Webhooks →** your webhook **→ Recent Deliveries**). Each delivery shows the site's answer, for example:
+
+```json
+{ "message": "Synced.", "added": [1], "alreadyTracked": [], "notMatched": ["some-new-problem"] }
+```
+
+`notMatched` lists NeetCode problems the site couldn't match to a LeetCode number. NeetCode gives many problems its own names
+("two-integer-sum" is LeetCode's "Two Sum"), and those names are kept in
+[`src/lib/neetcode-problems.ts`](src/lib/neetcode-problems.ts). Add the missing one there with its LeetCode number and push.
+Any name that isn't in that table is looked up on LeetCode as is, which works whenever NeetCode uses LeetCode's own name.
+You can also press **Redeliver** on a delivery after the fix to add the problem.
 
 ## Updating the site
 
@@ -210,6 +293,7 @@ The full schema, table by table, is explained in [`db/README.md`](db/README.md).
 │   │   ├── sign-in/page.tsx        The sign in page       ( /sign-in )
 │   │   ├── layout.tsx              The HTML shell around every page
 │   │   ├── globals.css             All styling
+│   │   ├── api/github-webhook/     Where GitHub sends NeetCode sync messages
 │   │   └── actions/                Server functions the forms and buttons call
 │   ├── components/                 Reusable UI pieces (rows, forms, the confirm dialog)
 │   └── lib/                        Everything that isn't UI
@@ -220,7 +304,9 @@ The full schema, table by table, is explained in [`db/README.md`](db/README.md).
 │       ├── repositories/           All SQL lives here
 │       ├── database.ts             Connection pool and transactions
 │       ├── session.ts              The sign-in cookie
-│       └── leetcode-catalog.ts     Looking up problem names on LeetCode
+│       ├── leetcode-catalog.ts     Looking up problem names on LeetCode
+│       ├── github-webhook.ts       Checking and reading GitHub's messages (pure logic)
+│       └── neetcode-problems.ts    NeetCode names that differ from LeetCode's
 └── tests/                          Automated tests of the rules
 ```
 
@@ -275,6 +361,10 @@ Following one click from start to finish is the fastest way to understand how th
 
 Adding a problem follows the same shape: `AddProblemForm` → `addProblemAction` → `addProblem` service →
 (saved problem, or `leetcode-catalog`) → `card-repository.createCard`.
+
+A NeetCode sync reuses that exact path. GitHub calls `api/github-webhook/route.ts`, which checks the signature and reads the file paths
+(`github-webhook.ts`). Then `syncNeetcodeSolves` turns each NeetCode name into a LeetCode number and calls the same `addProblem` service.
+There's no second copy of the "add a problem" logic.
 
 ---
 
@@ -338,6 +428,9 @@ KISS also means saying no to features. There's no password reset, no email sendi
 - **All SQL uses parameters** (`$1`, `$2`, ...), never string building, so SQL injection isn't possible.
   See [`src/lib/repositories/README.md`](src/lib/repositories/README.md).
 - **Server actions are protected against cross-site requests** by Next.js, which checks the request's `Origin` header.
+- **The NeetCode webhook only trusts signed messages.** GitHub signs each one with `GITHUB_WEBHOOK_SECRET` (HMAC SHA-256), and the site
+  compares signatures in constant time (`timingSafeEqual`) so an attacker can't guess one byte at a time. It can only ever add problems
+  to the one account in `NEETCODE_SYNC_EMAIL`.
 
 ## Things worth knowing (gotchas)
 
@@ -355,6 +448,9 @@ KISS also means saying no to features. There's no password reset, no email sendi
   If you shorten the list, cards above the new last level are treated as being at the last level.
 - **There's no rate limiting on sign-in.** bcrypt's slowness helps, but a determined attacker could still try many passwords.
   For a personal site this is a reasonable trade-off; see ideas below.
+- **NeetCode sync trusts NeetCode's "Accepted only" setting.** The submission files carry no pass or fail marker, so if the setting is "All",
+  wrong answers get added too. See [Only correct solutions count](#only-correct-solutions-count).
+- **NeetCode sync is for one account.** `NEETCODE_SYNC_EMAIL` names a single user. Supporting several people would mean storing a webhook secret per user.
 - **No password reset.** That needs sending email, which needs another service. If you forget your password, you can delete your row
   in the Neon SQL editor and sign up again (your cards are deleted with it, because of `ON DELETE CASCADE`).
 

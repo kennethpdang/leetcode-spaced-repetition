@@ -18,6 +18,14 @@ export async function findSavedProblem(problemNumber: number): Promise<LeetcodeP
   return rows[0];
 }
 
+export async function findSavedProblemBySlug(slug: string): Promise<LeetcodeProblem | null> {
+  const rows = await query<ProblemRow>("SELECT number, title, slug, difficulty FROM problems WHERE slug = $1", [slug]);
+  if (rows.length === 0) {
+    return null;
+  }
+  return rows[0];
+}
+
 export async function saveProblem(problem: LeetcodeProblem): Promise<void> {
   await query(
     `INSERT INTO problems (number, title, slug, difficulty)

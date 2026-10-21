@@ -7,7 +7,7 @@ npm test
 ```
 
 They use [Vitest](https://vitest.dev). The tests need no database or browser, because they only exercise the pure rule functions
-in `src/lib/spaced-repetition.ts`, `src/lib/dates.ts` and `src/lib/card-view.ts`.
+in `src/lib/spaced-repetition.ts`, `src/lib/dates.ts`, `src/lib/card-view.ts`, `src/lib/github-webhook.ts` and `src/lib/neetcode-problems.ts`.
 
 ## What's covered
 
@@ -26,6 +26,21 @@ in `src/lib/spaced-repetition.ts`, `src/lib/dates.ts` and `src/lib/card-view.ts`
 | drops to 8 days past 24 days overdue, so solving returns to 16 not 32 | The decrement rule. |
 | never drops below the first level | Level 0 can't drop. |
 | puts the most overdue problems first | Sorting and grouping. |
+
+[`neetcode-sync.test.ts`](neetcode-sync.test.ts) checks the NeetCode sync helpers:
+
+| Test | What it proves |
+| --- | --- |
+| accepts a message signed with the shared secret | A real GitHub message gets through. |
+| rejects a message signed with a different secret | Someone without the secret can't add problems. |
+| rejects a message whose body was changed after signing | A message can't be edited on the way. |
+| rejects a missing or malformed signature | Unsigned requests are refused. |
+| counts pushes to the main branch / ignores pushes to other branches | Only main counts. |
+| finds the problem name in a submission path | `.../two-integer-sum/submission-0.py` → `two-integer-sum`. |
+| ignores files that aren't submissions | The README and other files are skipped. |
+| lists each problem once, from added files only | Two submissions of one problem add it once. |
+| maps NeetCode's own names to LeetCode numbers | `two-integer-sum` → 1, `eating-bananas` → 875. |
+| leaves out problems that already share LeetCode's name | The table only holds real renames. |
 
 ## How the tests control time
 

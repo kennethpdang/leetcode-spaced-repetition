@@ -3,7 +3,8 @@
 A **service** carries out one thing a user wants to do, step by step, by calling the pure rules and the repositories in the right order.
 It's the "recipe"; the rules and repositories are the "ingredients".
 
-There's one file, [`card-service.ts`](card-service.ts), with two use cases.
+There are two files. [`card-service.ts`](card-service.ts) has the two use cases you trigger by hand, and
+[`neetcode-sync-service.ts`](neetcode-sync-service.ts) has the one GitHub triggers when you solve a problem on NeetCode.
 
 ## `addProblem(user, problemNumber)`
 
@@ -71,3 +72,15 @@ and the database constraint catches anything that slips through. Any one of them
 Vercel's servers run on UTC. If you solve a problem at 9 pm in Texas, it's already 2 am tomorrow in UTC.
 Using UTC would record the solve on the wrong day, and you could "solve" again the next morning (your same calendar day)
 and climb two levels in one day. `getTodayInTimeZone(user.timeZone)` uses your calendar instead.
+
+## `syncNeetcodeSolves(user, neetcodeSlugs)`
+
+Called by the GitHub webhook with the NeetCode problem names found in a push. For each name:
+
+1. **Find the LeetCode number**, trying the cheapest source first:
+   the rename table in `neetcode-problems.ts`, then our own `problems` table by slug, then LeetCode by slug (saving the answer).
+2. **Call `addProblem(user, number)`**, the same function the "Add problem" button uses. That's DRY: the rules about
+   creating a card, its first history row, and "already in your list" exist only once.
+3. **Sort the result** into `added`, `alreadyTracked`, or `notMatched`, and return all three lists.
+
+The webhook sends that summary back to GitHub, so you can read it under the webhook's **Recent Deliveries**.

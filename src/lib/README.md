@@ -4,7 +4,7 @@ Everything that isn't UI. The files fall into four groups:
 
 | Group | Files | Touches database or network? |
 | --- | --- | --- |
-| **Pure rules** | `spaced-repetition.ts`, `dates.ts`, `card-view.ts` | No. Input in, output out. |
+| **Pure rules** | `spaced-repetition.ts`, `dates.ts`, `card-view.ts`, `github-webhook.ts`, `neetcode-problems.ts` | No. Input in, output out. |
 | **Use cases** | [`services/`](services/README.md) | Yes, through repositories |
 | **Data access** | [`repositories/`](repositories/README.md) | Yes, all SQL lives here |
 | **Infrastructure** | `database.ts`, `session.ts`, `current-user.ts`, `leetcode-catalog.ts` | Yes |
@@ -171,8 +171,38 @@ This is the **Open/Closed principle** in action: open to extension, without modi
 
 Because problem details are saved in our `problems` table the first time they're found, each problem is only ever looked up once.
 
+`findLeetcodeProblemBySlug` does the same lookup by URL name instead of number (`question(titleSlug: ...)`). NeetCode sync uses it
+for problems whose NeetCode name is the same as LeetCode's. It returns `null` instead of throwing, so one failed lookup never stops a sync.
+
 > **Heads-up:** these endpoints aren't officially supported and could change. If adding new problems ever starts failing
 > with "Couldn't find LeetCode problem", this file is the only place that needs a fix.
+
+---
+
+## NeetCode sync helpers
+
+### `github-webhook.ts`
+
+Pure functions for the messages GitHub sends when NeetCode pushes a solution. None of them touch the database.
+
+- **`isValidSignature(rawBody, signatureHeader, secret)`**: GitHub sends `X-Hub-Signature-256: sha256=<hex>`, an HMAC of the exact request body
+  made with the webhook secret. We make the same HMAC and compare. It must be the *raw* body: parsing the JSON and turning it back into text
+  could change spacing and break the match. The comparison uses `timingSafeEqual`, which takes the same time whether the first byte or the last
+  byte differs, so nobody can learn the signature by timing many guesses.
+- **`isPushToDefaultBranch(pushEvent)`**: only pushes to the repository's main branch count.
+- **`getNeetcodeSlugFromPath(path)`**: NeetCode saves submissions as `<topic folder>/<problem name>/submission-<n>.<ext>`, for example
+  `Data Structures & Algorithms/two-integer-sum/submission-0.py`. A regular expression pulls out `two-integer-sum`. Anything else
+  (the README, a folder you added yourself) returns `null` and is ignored.
+- **`getSubmittedNeetcodeSlugs(pushEvent)`**: walks every commit's `added` files and returns each problem name once.
+  Only *added* files count, because a new submission is always a new file.
+
+### `neetcode-problems.ts`
+
+One table, `LEETCODE_NUMBER_BY_NEETCODE_SLUG`, for the problems NeetCode renamed (`"two-integer-sum": 1`, `"eating-bananas": 875`, ...).
+It covers the renamed problems in the NeetCode 150, built from NeetCode's own problem list in the
+[neetcode-gh/leetcode](https://github.com/neetcode-gh/leetcode) repository and checked against real sync repositories.
+Problems that share LeetCode's name (`binary-search`) are left out on purpose, because the service can look those up on its own.
+If a sync reports a name in `notMatched`, add one line here.
 
 ---
 
