@@ -2,6 +2,7 @@
 import { createHmac, timingSafeEqual } from "node:crypto";
 
 export interface PushCommit {
+  message?: string;
   added?: string[];
 }
 
@@ -12,6 +13,9 @@ export interface PushEvent {
 }
 
 const SIGNATURE_PREFIX = "sha256=";
+
+// NeetCode's commit message when it pushes all your past solutions at once, e.g. "Bulk sync: 110 submissions".
+const BULK_SYNC_MESSAGE_PREFIX = "Bulk sync";
 
 // NeetCode saves each submission as "<topic folder>/<problem name>/submission-<number>.<extension>".
 const SUBMISSION_PATH_PATTERN = /^[^/]+\/([a-z0-9-]+)\/submission-\d+\.[a-z]+$/;
@@ -37,6 +41,18 @@ export function isPushToDefaultBranch(pushEvent: PushEvent): boolean {
     return false;
   }
   return pushEvent.ref === "refs/heads/" + defaultBranch;
+}
+
+// A Bulk Sync re-sends old solutions, so it isn't a sign you just solved anything.
+export function isBulkSync(pushEvent: PushEvent): boolean {
+  const commits = pushEvent.commits ?? [];
+  for (let commitIndex = 0; commitIndex < commits.length; commitIndex++) {
+    const message = commits[commitIndex].message ?? "";
+    if (message.startsWith(BULK_SYNC_MESSAGE_PREFIX)) {
+      return true;
+    }
+  }
+  return false;
 }
 
 export function getNeetcodeSlugFromPath(filePath: string): string | null {

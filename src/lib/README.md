@@ -191,6 +191,9 @@ Pure functions for the messages GitHub sends when NeetCode pushes a solution. No
   could change spacing and break the match. The comparison uses `timingSafeEqual`, which takes the same time whether the first byte or the last
   byte differs, so nobody can learn the signature by timing many guesses.
 - **`isPushToDefaultBranch(pushEvent)`**: only pushes to the repository's main branch count.
+- **`isBulkSync(pushEvent)`**: true when a commit message starts with "Bulk sync", which is how NeetCode labels the push of all your
+  past solutions. Old solutions shouldn't count as reviews today, so the webhook only adds new problems from them.
+  If NeetCode ever changed that wording, a Bulk Sync would tick problems already on your list, and nothing worse.
 - **`getNeetcodeSlugFromPath(path)`**: NeetCode saves submissions as `<topic folder>/<problem name>/submission-<n>.<ext>`, for example
   `Data Structures & Algorithms/two-integer-sum/submission-0.py`. A regular expression pulls out `two-integer-sum`. Anything else
   (the README, a folder you added yourself) returns `null` and is ignored.

@@ -36,6 +36,9 @@ in `src/lib/spaced-repetition.ts`, `src/lib/dates.ts`, `src/lib/card-view.ts`, `
 | rejects a message whose body was changed after signing | A message can't be edited on the way. |
 | rejects a missing or malformed signature | Unsigned requests are refused. |
 | counts pushes to the main branch / ignores pushes to other branches | Only main counts. |
+| spots NeetCode's Bulk Sync commit, which re-sends old solutions | A Bulk Sync doesn't tick problems already on your list. |
+| treats NeetCode's normal commit as a new solve | An "Add: ..." commit counts as a review. |
+| treats a push without commit messages as a new solve | Missing data falls back to the normal case. |
 | finds the problem name in a submission path | `.../two-integer-sum/submission-0.py` → `two-integer-sum`. |
 | ignores files that aren't submissions | The README and other files are skipped. |
 | lists each problem once, from added files only | Two submissions of one problem add it once. |

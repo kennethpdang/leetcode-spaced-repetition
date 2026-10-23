@@ -77,8 +77,9 @@ The **signature** is the check instead. In order:
    This happens before the `ping` check on purpose, so the mistake shows up on GitHub's very first test message.
 4. `ping` (GitHub's test message when you add the webhook) answers "Connected." Any event other than `push` is ignored.
 5. Pushes to any branch but main are ignored.
-6. It finds the account by email, calls `syncNeetcodeSolves`, and calls `revalidatePath("/")` so your list is fresh next time you open it.
-7. It answers with the summary (`added`, `alreadyTracked`, `notMatched`), which GitHub shows under the webhook's **Recent Deliveries**.
+6. It finds the account by email and calls `syncNeetcodeSolves`. Re-solves count as reviews, except in a NeetCode Bulk Sync (`isBulkSync`),
+   which re-sends old solutions. Then it calls `revalidatePath("/")` so your list is fresh next time you open it.
+7. It answers with the summary (`added`, `reviewed`, `unchanged`, `notMatched`), which GitHub shows under the webhook's **Recent Deliveries**.
 
 Ignored events still answer 200. GitHub marks anything else as a failed delivery, and an ignored event isn't a failure.
 

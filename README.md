@@ -2,7 +2,8 @@
 
 A small website for reviewing LeetCode problems on a spaced repetition schedule.
 You type a problem number, the site looks up the problem's name, and it tells you when to solve it again.
-It can also add problems on its own: when you solve a problem on [NeetCode](https://neetcode.io), it shows up here automatically.
+It can also keep up on its own: when you solve a problem on [NeetCode](https://neetcode.io), it shows up here automatically,
+and solving one that's already on your list ticks its circle for you.
 Each time you solve a problem the gap before its next review grows, so problems you know well show up less and less often.
 
 This README covers what the site does, how to deploy it, how the code is organized, and why it was built this way.
@@ -57,7 +58,8 @@ There's no "Sign in with Google". Accounts are email and password only, by desig
 - A **Remove** button (also with a confirmation) in case you added the wrong number.
 
 If you turn on [NeetCode sync](#adding-problems-automatically-from-neetcode), problems you solve on NeetCode are added to this list by themselves,
-exactly as if you'd typed their number on the day you solved them.
+exactly as if you'd typed their number on the day you solved them. Solving one that's already on your list counts as a review,
+exactly as if you'd tapped its circle.
 
 It works on phones, tablets and desktops, and follows your device's light or dark mode.
 The colors match the Claude workspace: warm off-white background, near-black text, and a muted terracotta accent.
@@ -200,20 +202,31 @@ A red mark usually means the secret doesn't match or the site wasn't redeployed 
 ### What sync does and doesn't do
 
 - **A new problem** is added at level 0 (due tomorrow), the same as typing its number.
-- **A problem already in your list** is left alone. Mark reviews with the circle as usual.
-- **Bulk Sync** on NeetCode (pushing all your past solutions at once) adds every one of them as solved *today*, because the site can only
+- **A problem already in your list** counts as reviewed today, exactly like tapping its circle: it moves up a level and its circle turns green.
+  The circle still works by hand too, for problems you solve somewhere else. The one-step-per-day rule still holds,
+  so solving a problem twice in one day only counts once.
+- **Bulk Sync** on NeetCode (pushing all your past solutions at once) adds every *new* problem as solved *today*, because the site can only
   see when the push happened. That's fine for a first import, but expect a busy day of reviews tomorrow.
+  Problems already in your list are left alone, because a Bulk Sync re-sends old solutions, not new solves.
+  The site recognizes one by NeetCode's commit message, which starts with "Bulk sync".
 - **Only the repository's main branch counts**, and only *new* submission files. Edits or deletions on GitHub change nothing here.
 
-### When a problem doesn't show up
+### When a problem doesn't show up (or doesn't turn green)
 
 Open the webhook on GitHub (**Settings → Webhooks →** your webhook **→ Recent Deliveries**). Each delivery shows the site's answer, for example:
 
 ```json
-{ "message": "Synced.", "added": [1], "alreadyTracked": [], "notMatched": ["some-new-problem"] }
+{ "message": "Synced.", "added": [1], "reviewed": [75], "unchanged": [217], "notMatched": ["some-new-problem"] }
 ```
 
-`notMatched` lists NeetCode problems the site couldn't match to a LeetCode number. NeetCode gives many problems its own names
+| List | Meaning |
+| --- | --- |
+| `added` | New problems, now on your list and due tomorrow. |
+| `reviewed` | Problems already on your list that moved up a level, the same as tapping their circle. |
+| `unchanged` | Problems already on your list that were already solved today, or that came in a Bulk Sync. |
+| `notMatched` | NeetCode problems the site couldn't match to a LeetCode number (see below). |
+
+For `notMatched`: NeetCode gives many problems its own names
 ("two-integer-sum" is LeetCode's "Two Sum"), and those names are kept in
 [`src/lib/neetcode-problems.ts`](src/lib/neetcode-problems.ts). Add the missing one there with its LeetCode number and push.
 Any name that isn't in that table is looked up on LeetCode as is, which works whenever NeetCode uses LeetCode's own name.
@@ -380,6 +393,9 @@ Adding a problem follows the same shape: `AddProblemForm` → `addProblemAction`
 A NeetCode sync reuses that exact path. GitHub calls `api/github-webhook/route.ts`, which checks the signature and reads the file paths
 (`github-webhook.ts`). Then `syncNeetcodeSolves` turns each NeetCode name into a LeetCode number and calls the same `addProblem` service.
 There's no second copy of the "add a problem" logic.
+
+A NeetCode re-solve of a problem already on your list joins the circle's path at step 4: `solveProblem` finds the card by its number
+and calls the same `solveCard`. So the once-a-day rule, the row lock and the history row work exactly as they do for a tap.
 
 ---
 

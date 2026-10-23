@@ -67,6 +67,17 @@ export async function createCard(client: DatabaseClient, userId: number, problem
   return true;
 }
 
+export async function findCardId(userId: number, problemNumber: number): Promise<number | null> {
+  const rows = await query<{ id: string }>("SELECT id FROM cards WHERE user_id = $1 AND problem_number = $2", [
+    userId,
+    problemNumber,
+  ]);
+  if (rows.length === 0) {
+    return null;
+  }
+  return Number(rows[0].id);
+}
+
 // Locks the card row until the transaction ends so two clicks cannot both count.
 export async function findCardScheduleForUpdate(client: DatabaseClient, userId: number, cardId: number): Promise<CardSchedule | null> {
   const result = await client.query<{ level: number; last_solved_on: string }>(
