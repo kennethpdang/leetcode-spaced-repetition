@@ -7,7 +7,7 @@ Nothing outside it writes SQL.
 | --- | --- | --- |
 | `user-repository.ts` | `users` | `findUserById`, `findUserWithPasswordByEmail`, `createUser`, `updateUserTimeZone` |
 | `problem-repository.ts` | `problems` | `findSavedProblem`, `saveProblem` |
-| `card-repository.ts` | `cards`, `card_reviews` | `listCards`, `createCard`, `findCardScheduleForUpdate`, `recordSolve`, `deleteCard` |
+| `card-repository.ts` | `cards`, `card_reviews` | `listCards`, `createCard`, `findCardId`, `findCardScheduleForUpdate`, `recordSolve`, `deleteCard` |
 
 ## Why have repositories at all?
 
@@ -69,6 +69,8 @@ Our ids will never get that big, so `toUser` and `toCard` convert them with `Num
   Every card query filters by `user_id`, so you can only ever see your own cards.
 - `createCard` uses `ON CONFLICT (user_id, problem_number) DO NOTHING` and returns `false` if you already had that problem.
   It also writes the first `card_reviews` row, because adding counts as the first solve.
+- `findCardId` finds your card for a problem number, so NeetCode sync can tick the circle of a problem you re-solved.
+  Like every card query, it filters by `user_id`.
 - `findCardScheduleForUpdate` uses `SELECT ... FOR UPDATE`, which **locks** the row until the transaction ends.
   See [`../services/README.md`](../services/README.md) for why.
 - `deleteCard` uses `WHERE id = $1 AND user_id = $2`. Even if someone sends another person's card id, nothing is deleted.

@@ -1,6 +1,12 @@
 // GitHub calls this address every time NeetCode pushes a solution to your NeetCode GitHub repository.
 import { revalidatePath } from "next/cache";
-import { getSubmittedNeetcodeSlugs, isPushToDefaultBranch, isValidSignature, PushEvent } from "@/lib/github-webhook";
+import {
+  getSubmittedNeetcodeSlugs,
+  isBulkSync,
+  isPushToDefaultBranch,
+  isValidSignature,
+  PushEvent,
+} from "@/lib/github-webhook";
 import { findUserByEmail } from "@/lib/repositories/user-repository";
 import { syncNeetcodeSolves } from "@/lib/services/neetcode-sync-service";
 
@@ -48,7 +54,8 @@ export async function POST(request: Request): Promise<Response> {
     return reply(500, "No account uses the email in NEETCODE_SYNC_EMAIL.");
   }
 
-  const summary = await syncNeetcodeSolves(user, getSubmittedNeetcodeSlugs(pushEvent));
+  // A new solve of a problem already on the list counts as a review. A Bulk Sync of old solutions only adds new problems.
+  const summary = await syncNeetcodeSolves(user, getSubmittedNeetcodeSlugs(pushEvent), !isBulkSync(pushEvent));
   if (summary.notMatched.length > 0) {
     console.error("NeetCode sync couldn't match these problems to LeetCode:", summary.notMatched);
   }
