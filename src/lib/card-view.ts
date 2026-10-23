@@ -1,9 +1,11 @@
 import { formatDateForDisplay } from "@/lib/dates";
+import { getProblemUrl } from "@/lib/neetcode-problems";
 import { Card } from "@/lib/repositories/card-repository";
 import { CardStatus, getCardStatus } from "@/lib/spaced-repetition";
 
 export interface CardView extends Card {
   status: CardStatus;
+  problemUrl: string;
 }
 
 export interface GroupedCards {
@@ -24,7 +26,11 @@ export function groupCards(cards: Card[], today: string): GroupedCards {
   const groupedCards: GroupedCards = { overdue: [], dueToday: [], upcoming: [] };
   for (let cardIndex = 0; cardIndex < cards.length; cardIndex++) {
     const card = cards[cardIndex];
-    const cardView: CardView = { ...card, status: getCardStatus(card, today) };
+    const cardView: CardView = {
+      ...card,
+      status: getCardStatus(card, today),
+      problemUrl: getProblemUrl(card.problemNumber, card.slug),
+    };
     groupedCards[cardView.status.group].push(cardView);
   }
   groupedCards.overdue.sort(compareByUrgency);

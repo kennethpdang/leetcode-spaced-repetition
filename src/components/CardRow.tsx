@@ -58,7 +58,7 @@ export default function CardRow({ card }: { card: CardView }) {
       </button>
 
       <div className="card-body">
-        <a className="card-title" href={`https://leetcode.com/problems/${card.slug}/`} target="_blank" rel="noreferrer">
+        <a className="card-title" href={card.problemUrl} target="_blank" rel="noreferrer">
           {problemName}
         </a>
         <div className="card-meta">
