@@ -50,6 +50,8 @@ There's no "Sign in with Google". Accounts are email and password only, by desig
   - **Overdue**: past their due date, with the most overdue at the top and a terracotta stripe so they stand out.
   - **Due today**.
   - **Upcoming**: everything due later, soonest first.
+- Each problem's title is a link. It opens the problem on **NeetCode** when NeetCode has it, and on **LeetCode** when it doesn't.
+  The name you see always comes from LeetCode, since LeetCode has every problem and NeetCode only has some.
 - Next to every problem there's a **circle**. Tap it when you've solved the problem. A confirmation pops up ("Did you solve 200. Number of Islands? Its next review will be in 8 days.") so a stray tap doesn't count.
 - Once solved today, the circle turns green with a check and is locked until tomorrow.
 - A **Remove** button (also with a confirmation) in case you added the wrong number.
@@ -215,6 +217,9 @@ Open the webhook on GitHub (**Settings → Webhooks →** your webhook **→ Rec
 ("two-integer-sum" is LeetCode's "Two Sum"), and those names are kept in
 [`src/lib/neetcode-problems.ts`](src/lib/neetcode-problems.ts). Add the missing one there with its LeetCode number and push.
 Any name that isn't in that table is looked up on LeetCode as is, which works whenever NeetCode uses LeetCode's own name.
+
+The same file decides where each problem's title links to. If a NeetCode problem ever opens on LeetCode instead, or opens a
+NeetCode "not found" page, that file is the one place to fix it.
 You can also press **Redeliver** on a delivery after the fix to add the problem.
 
 Other answers you might see there:
@@ -316,7 +321,7 @@ The full schema, table by table, is explained in [`db/README.md`](db/README.md).
 │       ├── session.ts              The sign-in cookie
 │       ├── leetcode-catalog.ts     Looking up problem names on LeetCode
 │       ├── github-webhook.ts       Checking and reading GitHub's messages (pure logic)
-│       └── neetcode-problems.ts    NeetCode names that differ from LeetCode's
+│       └── neetcode-problems.ts    Which problems NeetCode has, and its names for them
 └── tests/                          Automated tests of the rules
 ```
 

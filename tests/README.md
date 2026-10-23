@@ -41,6 +41,10 @@ in `src/lib/spaced-repetition.ts`, `src/lib/dates.ts`, `src/lib/card-view.ts`, `
 | lists each problem once, from added files only | Two submissions of one problem add it once. |
 | maps NeetCode's own names to LeetCode numbers | `two-integer-sum` → 1, `eating-bananas` → 875. |
 | leaves out problems that already share LeetCode's name | The table only holds real renames. |
+| links renamed NeetCode problems to NeetCode's name | 1. Two Sum opens `neetcode.io/problems/two-integer-sum`. |
+| links same-name NeetCode problems to NeetCode | 704. Binary Search opens `neetcode.io/problems/binary-search`. |
+| links problems NeetCode doesn't have to LeetCode | A LeetCode-only problem still opens on LeetCode. |
+| lists each LeetCode number only once | No problem is in both tables, so there's never a question which link wins. |
 
 ## How the tests control time
 

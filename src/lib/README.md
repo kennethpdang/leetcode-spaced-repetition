@@ -114,6 +114,7 @@ daylight saving time can never make a "day" 23 or 25 hours long.
 - **`groupCards(cards, today)`** attaches a `status` to each card and puts it into the `overdue`, `dueToday` or `upcoming` bucket.
 - **`compareByUrgency`** sorts within each bucket by `daysUntilDue`, smallest first. Overdue cards have negative values,
   so the *most* overdue (most negative) come first. Ties are broken by problem number so the order never jumps around.
+- Each card also gets a **`problemUrl`**, from `getProblemUrl` in `neetcode-problems.ts` (see below).
 - **`describeDueDate`** and **`describeInterval`** turn a status into the gray text under each title, like "Overdue by 3 days" or "Every 16 days".
 
 Keeping these labels out of the React component means the wording can be tested, and the component stays short.
@@ -198,11 +199,33 @@ Pure functions for the messages GitHub sends when NeetCode pushes a solution. No
 
 ### `neetcode-problems.ts`
 
-One table, `LEETCODE_NUMBER_BY_NEETCODE_SLUG`, for the problems NeetCode renamed (`"two-integer-sum": 1`, `"eating-bananas": 875`, ...).
-It covers the renamed problems in the NeetCode 150, built from NeetCode's own problem list in the
-[neetcode-gh/leetcode](https://github.com/neetcode-gh/leetcode) repository and checked against real sync repositories.
-Problems that share LeetCode's name (`binary-search`) are left out on purpose, because the service can look those up on its own.
-If a sync reports a name in `notMatched`, add one line here.
+Everything the app knows about which problems NeetCode has. It does two jobs: NeetCode sync uses it to turn a NeetCode name into a
+LeetCode number, and the problem list uses it to decide whether a title links to NeetCode or LeetCode.
+
+NeetCode only has about 420 of LeetCode's 3,000+ problems, and it gives some of them its own URL name
+(`neetcode.io/problems/two-integer-sum` is LeetCode's `two-sum`). So every LeetCode problem falls into one of three buckets:
+
+| Bucket | Example | Stored in | Link |
+| --- | --- | --- | --- |
+| On NeetCode, **renamed** | 1. Two Sum | `LEETCODE_NUMBER_BY_NEETCODE_SLUG` (`"two-integer-sum": 1`) | `neetcode.io/problems/two-integer-sum` |
+| On NeetCode, **same name** | 704. Binary Search | `LEETCODE_NUMBERS_WITH_SAME_NEETCODE_SLUG` (`704`) | `neetcode.io/problems/binary-search` |
+| **LeetCode only** | 1000. Minimum Cost to Merge Stones | neither table | `leetcode.com/problems/minimum-cost-to-merge-stones/` |
+
+Both tables were built from NeetCode's own problem list (`.problemSiteData.json` in the
+[neetcode-gh/leetcode](https://github.com/neetcode-gh/leetcode) repository). Each NeetCode name was checked against that repository's
+`articles/` folder, which has one solution page per NeetCode problem, named exactly like the problem's NeetCode URL.
+NeetCode's JavaScript course problems (LeetCode 2618 and up) are left out, because they live in a separate course, not the problem list.
+
+**`getProblemUrl(problemNumber, leetcodeSlug)`** is the function the rest of the app calls. It asks
+**`findNeetcodeSlug`** for the NeetCode name and builds a NeetCode link if there is one, or a LeetCode link if not.
+`card-view.ts` calls it once per card on the server, so the 400-line table never gets sent to your browser.
+
+The rename table is stored NeetCode name → LeetCode number, because that's the direction sync needs. Links need the other direction,
+so `buildNeetcodeSlugByLeetcodeNumber` flips it into a `Map` once, when the file first loads. Keeping one table and flipping it,
+instead of typing a second reversed table, is **DRY**: a rename can never be added to one table and forgotten in the other.
+
+**When NeetCode adds problems**, add one line: to the rename table if NeetCode's URL name differs from LeetCode's, otherwise to the
+same-name list. If a sync reports a name in `notMatched`, that's a missing rename.
 
 ---
 

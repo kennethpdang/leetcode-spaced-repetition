@@ -10,7 +10,7 @@ for what that means.)
 | `TimeZoneInput.tsx` | yes | A hidden form field holding your browser's time zone. |
 | `AddProblemForm.tsx` | yes | The "LeetCode problem number" box and **Add problem** button. |
 | `CardSection.tsx` | no | A heading ("Overdue (2)") and the list of rows under it. Renders nothing when empty. |
-| `CardRow.tsx` | yes | One problem: the circle, title link, difficulty, due text, **Remove**, and its confirm dialog. |
+| `CardRow.tsx` | yes | One problem: the circle, title link (to `card.problemUrl`: NeetCode when it has the problem, otherwise LeetCode), difficulty, due text, **Remove**, and its confirm dialog. |
 | `ConfirmDialog.tsx` | yes | The "Are you sure?" popup, used for both solving and removing. |
 | `FormMessage.tsx` | no | Shows an error (red) or success (green) message from an `ActionResult`. |
 

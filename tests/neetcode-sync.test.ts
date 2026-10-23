@@ -6,7 +6,7 @@ import {
   isPushToDefaultBranch,
   isValidSignature,
 } from "@/lib/github-webhook";
-import { LEETCODE_NUMBER_BY_NEETCODE_SLUG } from "@/lib/neetcode-problems";
+import { getProblemUrl, LEETCODE_NUMBER_BY_NEETCODE_SLUG, LEETCODE_NUMBERS_WITH_SAME_NEETCODE_SLUG } from "@/lib/neetcode-problems";
 
 const SECRET = "test-secret";
 
@@ -78,5 +78,32 @@ describe("NeetCode rename table", () => {
 
   it("leaves out problems that already share LeetCode's name", () => {
     expect(LEETCODE_NUMBER_BY_NEETCODE_SLUG["binary-search"]).toBeUndefined();
+  });
+});
+
+describe("problem links", () => {
+  it("links renamed NeetCode problems to NeetCode's name", () => {
+    expect(getProblemUrl(1, "two-sum")).toBe("https://neetcode.io/problems/two-integer-sum");
+    expect(getProblemUrl(50, "powx-n")).toBe("https://neetcode.io/problems/pow-x-n");
+  });
+
+  it("links same-name NeetCode problems to NeetCode", () => {
+    expect(getProblemUrl(704, "binary-search")).toBe("https://neetcode.io/problems/binary-search");
+  });
+
+  it("links problems NeetCode doesn't have to LeetCode", () => {
+    expect(getProblemUrl(1000, "minimum-cost-to-merge-stones")).toBe(
+      "https://leetcode.com/problems/minimum-cost-to-merge-stones/",
+    );
+  });
+
+  it("lists each LeetCode number only once", () => {
+    const seenNumbers = new Set<number>(Object.values(LEETCODE_NUMBER_BY_NEETCODE_SLUG));
+    let totalCount = seenNumbers.size;
+    for (let numberIndex = 0; numberIndex < LEETCODE_NUMBERS_WITH_SAME_NEETCODE_SLUG.length; numberIndex++) {
+      seenNumbers.add(LEETCODE_NUMBERS_WITH_SAME_NEETCODE_SLUG[numberIndex]);
+      totalCount++;
+    }
+    expect(seenNumbers.size).toBe(totalCount);
   });
 });
