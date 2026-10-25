@@ -3,7 +3,7 @@
 A **service** carries out one thing a user wants to do, step by step, by calling the pure rules and the repositories in the right order.
 It's the "recipe"; the rules and repositories are the "ingredients".
 
-There are two files. [`card-service.ts`](card-service.ts) has the two use cases you trigger by hand, and
+There are two files. [`card-service.ts`](card-service.ts) has the use cases you trigger by hand (plus `solveProblem`, which lets sync tick a circle by problem number), and
 [`neetcode-sync-service.ts`](neetcode-sync-service.ts) has the one GitHub triggers when you solve a problem on NeetCode.
 
 ## `addProblem(user, problemNumber)`
@@ -73,7 +73,12 @@ Vercel's servers run on UTC. If you solve a problem at 9 pm in Texas, it's alrea
 Using UTC would record the solve on the wrong day, and you could "solve" again the next morning (your same calendar day)
 and climb two levels in one day. `getTodayInTimeZone(user.timeZone)` uses your calendar instead.
 
-## `syncNeetcodeSolves(user, neetcodeSlugs)`
+## `solveProblem(user, problemNumber)`
+
+The same as tapping a problem's circle, for a caller that knows the LeetCode number but not the card's id.
+It finds the card (`findCardId`) and hands it to `solveCard`, so every rule above applies unchanged. NeetCode sync is the caller.
+
+## `syncNeetcodeSolves(user, neetcodeSlugs, countsAsReview)`
 
 Called by the GitHub webhook with the NeetCode problem names found in a push. For each name:
 
@@ -81,6 +86,9 @@ Called by the GitHub webhook with the NeetCode problem names found in a push. Fo
    the rename table in `neetcode-problems.ts`, then our own `problems` table by slug, then LeetCode by slug (saving the answer).
 2. **Call `addProblem(user, number)`**, the same function the "Add problem" button uses. That's DRY: the rules about
    creating a card, its first history row, and "already in your list" exist only once.
-3. **Sort the result** into `added`, `alreadyTracked`, or `notMatched`, and return all three lists.
+3. **If it was already in your list**, and `countsAsReview` is true, **call `solveProblem`**: the re-solve counts exactly like a tap,
+   including "at most once a day". `countsAsReview` is false for a NeetCode Bulk Sync, which re-sends old solutions.
+4. **Sort the result** into `added`, `reviewed`, `unchanged`, or `notMatched`, and return all four lists.
+   `unchanged` means the problem was already solved today (a problem added today counts), or came in a Bulk Sync.
 
 The webhook sends that summary back to GitHub, so you can read it under the webhook's **Recent Deliveries**.

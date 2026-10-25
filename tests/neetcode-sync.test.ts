@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import {
   getNeetcodeSlugFromPath,
   getSubmittedNeetcodeSlugs,
+  isBulkSync,
   isPushToDefaultBranch,
   isValidSignature,
 } from "@/lib/github-webhook";
@@ -42,6 +43,21 @@ describe("default branch check", () => {
 
   it("ignores pushes to other branches", () => {
     expect(isPushToDefaultBranch({ ref: "refs/heads/experiment", repository: { default_branch: "main" } })).toBe(false);
+  });
+});
+
+describe("Bulk Sync check", () => {
+  it("spots NeetCode's Bulk Sync commit, which re-sends old solutions", () => {
+    expect(isBulkSync({ commits: [{ message: "Bulk sync: 110 submissions" }] })).toBe(true);
+  });
+
+  it("treats NeetCode's normal commit as a new solve", () => {
+    expect(isBulkSync({ commits: [{ message: "Add: sort-colors - submission-4" }] })).toBe(false);
+  });
+
+  it("treats a push without commit messages as a new solve", () => {
+    expect(isBulkSync({ commits: [{}] })).toBe(false);
+    expect(isBulkSync({})).toBe(false);
   });
 });
 

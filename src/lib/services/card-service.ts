@@ -1,7 +1,7 @@
 import { withTransaction } from "@/lib/database";
 import { getTodayInTimeZone } from "@/lib/dates";
 import { findLeetcodeProblem, LeetcodeProblem } from "@/lib/leetcode-catalog";
-import { createCard, findCardScheduleForUpdate, recordSolve } from "@/lib/repositories/card-repository";
+import { createCard, findCardId, findCardScheduleForUpdate, recordSolve } from "@/lib/repositories/card-repository";
 import { findSavedProblem, saveProblem } from "@/lib/repositories/problem-repository";
 import { User } from "@/lib/repositories/user-repository";
 import { getLevelAfterSolve } from "@/lib/spaced-repetition";
@@ -69,4 +69,13 @@ export async function solveCard(user: User, cardId: number): Promise<SolveOutcom
     }
     throw error;
   }
+}
+
+// The same as tapping a problem's circle, for callers that know the problem number rather than the card (NeetCode sync).
+export async function solveProblem(user: User, problemNumber: number): Promise<SolveOutcome> {
+  const cardId = await findCardId(user.id, problemNumber);
+  if (cardId === null) {
+    return "notFound";
+  }
+  return solveCard(user, cardId);
 }
