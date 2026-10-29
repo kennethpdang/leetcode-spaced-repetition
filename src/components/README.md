@@ -11,6 +11,7 @@ for what that means.)
 | `AddProblemForm.tsx` | yes | The "LeetCode problem number" box and **Add problem** button. |
 | `CardSection.tsx` | no | A heading ("Overdue (2)") and the list of rows under it. Renders nothing when empty. |
 | `CardRow.tsx` | yes | One problem: the circle, title link (to `card.problemUrl`: NeetCode when it has the problem, otherwise LeetCode), difficulty, due text, **Remove**, and its confirm dialog. |
+| `TopicFilter.tsx` | yes | The topic dropdown. Picking a topic changes the address to `/?topic=<id>` (or `/` for All topics). |
 | `ConfirmDialog.tsx` | yes | The "Are you sure?" popup, used for both solving and removing. |
 | `FormMessage.tsx` | no | Shows an error (red) or success (green) message from an `ActionResult`. |
 
@@ -75,7 +76,18 @@ The browser knows your time zone (`Intl.DateTimeFormat().resolvedOptions().timeZ
 If the component read the time zone during rendering, the server's HTML would say `UTC` and the browser's would say `America/Chicago`.
 React would warn about the mismatch (a **hydration mismatch**). Setting it in `useEffect`, which only runs in the browser after the first render, avoids that.
 
+## `TopicFilter.tsx`: a dropdown that changes the address
+
+The dropdown doesn't filter anything itself. When you pick a topic it calls `router.push("/?topic=trees")` (from `next/navigation`),
+and the server renders the page again with only that topic's cards. The current topic comes back in as the `selectedTopicId` prop,
+so what the dropdown shows always matches the address. This keeps the component tiny and keeps all the filtering logic in one
+tested place (`card-view.ts`) on the server.
+
+The `push` is wrapped in `useTransition`, which gives an `isLoading` flag while the new page loads. The dropdown is disabled for
+that moment so you can't fire two changes at once. It's a native `<select>`, so it works with a keyboard and opens the
+phone's own picker on mobile. The CSS (`.topic-select`) only swaps the browser's arrow for a small chevron to match the page.
+
 ## Responsive design
 
 All components use the classes in [`../app/globals.css`](../app/globals.css). Layouts use flexbox with wrapping, so rows reflow on narrow screens.
-Below 520 px wide, the add form stacks vertically and the name fields go one per line. The circle is 30 px wide so it's easy to hit with a thumb.
+Below 520 px wide, the add form stacks vertically, the name fields go one per line, and the topic dropdown goes full width under the counts. The circle is 30 px wide so it's easy to hit with a thumb.

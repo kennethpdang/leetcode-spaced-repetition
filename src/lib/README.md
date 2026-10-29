@@ -4,7 +4,7 @@ Everything that isn't UI. The files fall into four groups:
 
 | Group | Files | Touches database or network? |
 | --- | --- | --- |
-| **Pure rules** | `spaced-repetition.ts`, `dates.ts`, `card-view.ts`, `github-webhook.ts`, `neetcode-problems.ts` | No. Input in, output out. |
+| **Pure rules** | `spaced-repetition.ts`, `dates.ts`, `card-view.ts`, `github-webhook.ts`, `neetcode-problems.ts`, `neetcode-topics.ts` | No. Input in, output out. |
 | **Use cases** | [`services/`](services/README.md) | Yes, through repositories |
 | **Data access** | [`repositories/`](repositories/README.md) | Yes, all SQL lives here |
 | **Infrastructure** | `database.ts`, `session.ts`, `current-user.ts`, `leetcode-catalog.ts` | Yes |
@@ -115,6 +115,11 @@ daylight saving time can never make a "day" 23 or 25 hours long.
 - **`compareByUrgency`** sorts within each bucket by `daysUntilDue`, smallest first. Overdue cards have negative values,
   so the *most* overdue (most negative) come first. Ties are broken by problem number so the order never jumps around.
 - Each card also gets a **`problemUrl`**, from `getProblemUrl` in `neetcode-problems.ts` (see below).
+- **`filterCardsByTopic(cards, topicId)`** keeps only the cards whose problem is under one topic. The page runs it *before*
+  `groupCards`, so the overdue, due today and upcoming lists are all filtered the same way, with no extra code in each.
+- **`buildTopicOptions(cards)`** makes the dropdown's choices: every topic from `listTopicChoices()` (see below) with a `cardCount`,
+  the number of your cards under it. It counts by calling `filterCardsByTopic`, so "how many are in Trees" and "show me Trees"
+  can never disagree. With 19 topics and a few hundred cards that's a few thousand quick checks, which is nothing for a computer.
 - **`describeDueDate`** and **`describeInterval`** turn a status into the gray text under each title, like "Overdue by 3 days" or "Every 16 days".
 
 Keeping these labels out of the React component means the wording can be tested, and the component stays short.
@@ -228,7 +233,30 @@ so `buildNeetcodeSlugByLeetcodeNumber` flips it into a `Map` once, when the file
 instead of typing a second reversed table, is **DRY**: a rename can never be added to one table and forgotten in the other.
 
 **When NeetCode adds problems**, add one line: to the rename table if NeetCode's URL name differs from LeetCode's, otherwise to the
-same-name list. If a sync reports a name in `notMatched`, that's a missing rename.
+same-name list, and add its number to its topic in `neetcode-topics.ts`. If a sync reports a name in `notMatched`, that's a missing rename.
+
+### `neetcode-topics.ts`
+
+Which of the 18 [NeetCode roadmap](https://neetcode.io/roadmap) topics each problem is under. It powers the topic dropdown on the problem list.
+
+**`NEETCODE_TOPICS`** is a list of topics in roadmap order, each with an `id` (used in the address, like `"heap-priority-queue"`),
+a `name` (shown in the dropdown, like `"Heap / Priority Queue"`) and its `problemNumbers`. Like the tables in `neetcode-problems.ts`,
+it was built from NeetCode's `.problemSiteData.json`, where every problem has a `pattern` field naming its topic.
+NeetCode files each problem under exactly one topic, and a test checks that no number appears twice.
+
+Problems NeetCode doesn't have aren't in any topic, so they get **`OTHER_TOPIC_ID`** (`"other"`). Every card always has a topic,
+which means "All topics" is always exactly the sum of the other choices.
+
+The table is stored **topic → problems**, because that's how the roadmap reads and how you'd add to it. Looking a problem up needs
+the other direction, so `buildTopicIdByProblemNumber` flips it into a `Map` once when the file loads, the same trick
+`neetcode-problems.ts` uses. After that, **`getTopicId(problemNumber)`** is one `Map` lookup.
+
+- **`listTopicChoices()`** returns every choice for the dropdown: the 18 topics in order, then "Other".
+- **`findTopicChoice(topicId)`** turns the `?topic=` from the address back into a topic, or `null` if there's no such topic.
+  The page treats `null` as "show everything", so a bad link can't break anything.
+
+Why a table in the code and not a `topic` column in the database? The topics belong to NeetCode, not to you, and they're the same for
+every user. Keeping them next to the other NeetCode tables means a topic fix is one line and a push, with no database change.
 
 ---
 

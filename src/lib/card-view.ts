@@ -1,5 +1,6 @@
 import { formatDateForDisplay } from "@/lib/dates";
 import { getProblemUrl } from "@/lib/neetcode-problems";
+import { getTopicId, listTopicChoices, TopicChoice } from "@/lib/neetcode-topics";
 import { Card } from "@/lib/repositories/card-repository";
 import { CardStatus, getCardStatus } from "@/lib/spaced-repetition";
 
@@ -12,6 +13,32 @@ export interface GroupedCards {
   overdue: CardView[];
   dueToday: CardView[];
   upcoming: CardView[];
+}
+
+export interface TopicOption extends TopicChoice {
+  cardCount: number;
+}
+
+// Only the cards whose problem is under this topic.
+export function filterCardsByTopic(cards: Card[], topicId: string): Card[] {
+  const matchingCards: Card[] = [];
+  for (let cardIndex = 0; cardIndex < cards.length; cardIndex++) {
+    if (getTopicId(cards[cardIndex].problemNumber) === topicId) {
+      matchingCards.push(cards[cardIndex]);
+    }
+  }
+  return matchingCards;
+}
+
+// Every topic for the dropdown, each with how many of the user's cards (due or done) it holds.
+export function buildTopicOptions(cards: Card[]): TopicOption[] {
+  const topicChoices = listTopicChoices();
+  const topicOptions: TopicOption[] = [];
+  for (let topicIndex = 0; topicIndex < topicChoices.length; topicIndex++) {
+    const topicChoice = topicChoices[topicIndex];
+    topicOptions.push({ ...topicChoice, cardCount: filterCardsByTopic(cards, topicChoice.id).length });
+  }
+  return topicOptions;
 }
 
 // Most urgent first: the most overdue cards, then the soonest due, then by problem number.

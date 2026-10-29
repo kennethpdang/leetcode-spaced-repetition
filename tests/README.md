@@ -7,7 +7,7 @@ npm test
 ```
 
 They use [Vitest](https://vitest.dev). The tests need no database or browser, because they only exercise the pure rule functions
-in `src/lib/spaced-repetition.ts`, `src/lib/dates.ts`, `src/lib/card-view.ts`, `src/lib/github-webhook.ts` and `src/lib/neetcode-problems.ts`.
+in `src/lib/spaced-repetition.ts`, `src/lib/dates.ts`, `src/lib/card-view.ts`, `src/lib/github-webhook.ts`, `src/lib/neetcode-problems.ts` and `src/lib/neetcode-topics.ts`.
 
 ## What's covered
 
@@ -48,6 +48,19 @@ in `src/lib/spaced-repetition.ts`, `src/lib/dates.ts`, `src/lib/card-view.ts`, `
 | links same-name NeetCode problems to NeetCode | 704. Binary Search opens `neetcode.io/problems/binary-search`. |
 | links problems NeetCode doesn't have to LeetCode | A LeetCode-only problem still opens on LeetCode. |
 | lists each LeetCode number only once | No problem is in both tables, so there's never a question which link wins. |
+
+[`neetcode-topics.test.ts`](neetcode-topics.test.ts) checks the topic table and the topic filter:
+
+| Test | What it proves |
+| --- | --- |
+| has the 18 roadmap topics | The dropdown matches the NeetCode roadmap, in order. |
+| puts well known problems under the right topic | 217 → Arrays & Hashing, 20 → Stack, 226 → Trees, 70 → 1-D Dynamic Programming. |
+| puts problems NeetCode doesn't have under Other | A LeetCode-only problem still has a topic. |
+| lists each problem under only one topic | A problem can never show up under two choices. |
+| gives every NeetCode problem a real topic | Nothing NeetCode has falls into Other by mistake. |
+| finds topics by id and ignores unknown ids | A mistyped `?topic=` shows everything instead of breaking. |
+| keeps only the cards in the chosen topic | The filter itself. |
+| counts cards for every topic, with Other last | The numbers in the dropdown. |
 
 ## How the tests control time
 

@@ -34,6 +34,7 @@ Client Components that handle the interactive bits.
 ```
 page.tsx (server)  ── loads user and cards from the database
  ├── AddProblemForm (client)   ── the number box and button
+ ├── TopicFilter (client)      ── the topic dropdown
  └── CardSection (server)      ── a heading and a list
       └── CardRow (client)     ── the circle, the dialog, the remove button
 ```
@@ -47,9 +48,13 @@ Step by step:
 
 1. `getCurrentUser()` reads the session cookie. No valid session → `redirect("/sign-in")`.
 2. `getTodayInTimeZone(user.timeZone)` works out today's date *for this user*.
-3. `listCards(user.id)` loads the user's cards (one SQL query).
-4. `groupCards(cards, today)` splits them into overdue / due today / upcoming and sorts each group.
-5. It renders the header, the add form, the summary pills, and three `CardSection`s. A section with no cards renders nothing.
+3. It reads `?topic=` from `searchParams` and looks it up with `findTopicChoice`. No topic, or an unknown one, means "show everything".
+   (In this version of Next.js, `searchParams` is a Promise, so the page `await`s it.)
+4. `listCards(user.id)` loads the user's cards (one SQL query). All of them are always loaded, because the dropdown needs every topic's count.
+5. If a topic was picked, `filterCardsByTopic` keeps only that topic's cards.
+6. `groupCards(shownCards, today)` splits them into overdue / due today / upcoming and sorts each group.
+7. It renders the header, the add form, the summary pills with the topic dropdown beside them, and three `CardSection`s.
+   A section with no cards renders nothing. If a topic has no cards at all, it says so ("No Tries problems on your list yet.").
 
 `export const dynamic = "force-dynamic"` tells Next.js never to cache this page. It depends on who you are and what day it is,
 so it must be rendered fresh on every request. (Reading cookies already makes it dynamic; this line just makes the intent obvious.)
@@ -99,7 +104,7 @@ One plain CSS file, organized top to bottom:
 2. **Dark mode**: `@media (prefers-color-scheme: dark)` redefines the same variables. Nothing else has to know about dark mode.
 3. **Shared building blocks**: `.panel`, `.button`, `.text-input`, `.message`.
 4. **Page-specific sections**: sign in, dashboard, confirmation dialog.
-5. **Small screens**: `@media (max-width: 520px)` stacks the add form vertically and puts the name fields on separate lines.
+5. **Small screens**: `@media (max-width: 520px)` stacks the add form vertically, puts the name fields on separate lines, and makes the topic dropdown full width.
 
 The palette copies the Claude workspace:
 
