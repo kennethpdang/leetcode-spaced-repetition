@@ -20,6 +20,7 @@ Every folder also has its own README that goes deeper into the code inside it. A
 ## Table of contents
 
 - [What the site does](#what-the-site-does)
+- [Filtering by topic](#filtering-by-topic)
 - [How the schedule works](#how-the-schedule-works)
 - [Setting it up on Vercel](#setting-it-up-on-vercel-one-time-about-15-minutes)
 - [Adding problems automatically from NeetCode](#adding-problems-automatically-from-neetcode)
@@ -56,6 +57,10 @@ There's no "Sign in with Google". Accounts are email and password only, by desig
 - Next to every problem there's a **circle**. Tap it when you've solved the problem. A confirmation pops up ("Did you solve 200. Number of Islands? Its next review will be in 8 days.") so a stray tap doesn't count.
 - Once solved today, the circle turns green with a check and is locked until tomorrow.
 - A **Remove** button (also with a confirmation) in case you added the wrong number.
+- A **topic dropdown** next to the counts. It starts on **All topics**, which shows everything. Pick a topic from the
+  [NeetCode roadmap](https://neetcode.io/roadmap) (Arrays & Hashing, Two Pointers, Stack, … Math & Geometry) and only that topic's problems
+  are shown, in all three groups, done and due alike. Problems NeetCode doesn't have go under **Other**.
+  Each choice shows how many of your problems it holds, like "Trees (4)". See [Filtering by topic](#filtering-by-topic).
 
 If you turn on [NeetCode sync](#adding-problems-automatically-from-neetcode), problems you solve on NeetCode are added to this list by themselves,
 exactly as if you'd typed their number on the day you solved them. Solving one that's already on your list counts as a review,
@@ -63,6 +68,19 @@ exactly as if you'd tapped its circle.
 
 It works on phones, tablets and desktops, and follows your device's light or dark mode.
 The colors match the Claude workspace: warm off-white background, near-black text, and a muted terracotta accent.
+
+## Filtering by topic
+
+The topic you pick is put in the page's address, like `/?topic=trees`. That has a few nice side effects for very little code:
+you can bookmark a topic, the browser's back button undoes a filter, and refreshing keeps it. `/` with no topic shows everything.
+A topic the site doesn't know (say, a mistyped link) also just shows everything, rather than an error.
+
+The filter only changes what you **see**. Each problem keeps its own schedule, so filtering never moves a due date.
+The counts at the top ("3 overdue", "5 to do today", "7 total") count only the problems being shown.
+
+Which topic a problem belongs to comes from NeetCode's own problem list, so it matches the roadmap exactly.
+Every problem sits under exactly one topic; for example 1. Two Sum is under Arrays & Hashing, and 70. Climbing Stairs is under 1-D Dynamic Programming.
+The table lives in [`src/lib/neetcode-topics.ts`](src/lib/neetcode-topics.ts) and is explained in [`src/lib/README.md`](src/lib/README.md#neetcode-topicsts).
 
 ## How the schedule works
 
@@ -327,14 +345,15 @@ The full schema, table by table, is explained in [`db/README.md`](db/README.md).
 │   └── lib/                        Everything that isn't UI
 │       ├── spaced-repetition.ts    The schedule and its rules (pure logic)
 │       ├── dates.ts                Calendar date math (pure logic)
-│       ├── card-view.ts            Grouping, sorting and labels (pure logic)
+│       ├── card-view.ts            Grouping, sorting, topic filtering and labels (pure logic)
 │       ├── services/               Use cases: "add a problem", "solve a card"
 │       ├── repositories/           All SQL lives here
 │       ├── database.ts             Connection pool and transactions
 │       ├── session.ts              The sign-in cookie
 │       ├── leetcode-catalog.ts     Looking up problem names on LeetCode
 │       ├── github-webhook.ts       Checking and reading GitHub's messages (pure logic)
-│       └── neetcode-problems.ts    Which problems NeetCode has, and its names for them
+│       ├── neetcode-problems.ts    Which problems NeetCode has, and its names for them
+│       └── neetcode-topics.ts      Which NeetCode roadmap topic each problem is under
 └── tests/                          Automated tests of the rules
 ```
 
