@@ -210,7 +210,7 @@ Pure functions for the messages GitHub sends when NeetCode pushes a solution. No
 Everything the app knows about which problems NeetCode has. It does two jobs: NeetCode sync uses it to turn a NeetCode name into a
 LeetCode number, and the problem list uses it to decide whether a title links to NeetCode or LeetCode.
 
-NeetCode only has about 420 of LeetCode's 3,000+ problems, and it gives some of them its own URL name
+NeetCode only has about 740 of LeetCode's 3,000+ problems, and it gives some of them its own URL name
 (`neetcode.io/problems/two-integer-sum` is LeetCode's `two-sum`). So every LeetCode problem falls into one of three buckets:
 
 | Bucket | Example | Stored in | Link |
@@ -219,10 +219,14 @@ NeetCode only has about 420 of LeetCode's 3,000+ problems, and it gives some of 
 | On NeetCode, **same name** | 704. Binary Search | `LEETCODE_NUMBERS_WITH_SAME_NEETCODE_SLUG` (`704`) | `neetcode.io/problems/binary-search` |
 | **LeetCode only** | 1000. Minimum Cost to Merge Stones | neither table | `leetcode.com/problems/minimum-cost-to-merge-stones/` |
 
-Both tables were built from NeetCode's own problem list (`.problemSiteData.json` in the
-[neetcode-gh/leetcode](https://github.com/neetcode-gh/leetcode) repository). Each NeetCode name was checked against that repository's
-`articles/` folder, which has one solution page per NeetCode problem, named exactly like the problem's NeetCode URL.
-NeetCode's JavaScript course problems (LeetCode 2618 and up) are left out, because they live in a separate course, not the problem list.
+Both tables were built from the [neetcode-gh/leetcode](https://github.com/neetcode-gh/leetcode) repository. Its `articles/` folder has
+one solution page per problem on neetcode.io, named exactly like the problem's NeetCode URL, so every article name became an entry
+(plus the `hints/` folder and `.problemSiteData.json`, for completeness). Article names that match a LeetCode URL name went in the
+same-name list, using LeetCode numbers from [doocs/leetcode](https://github.com/doocs/leetcode)'s `solution/result.json`.
+
+An earlier version used only `.problemSiteData.json`, which is the NeetCode 150/250 roadmap list. It's missing hundreds of problems
+that are on neetcode.io (for example 229. Majority Element II), so those titles wrongly linked to LeetCode.
+NeetCode's JavaScript course problems (like 2620. Counter) and its machine learning lessons are left out, because they aren't LeetCode practice problems.
 
 **`getProblemUrl(problemNumber, leetcodeSlug)`** is the function the rest of the app calls. It asks
 **`findNeetcodeSlug`** for the NeetCode name and builds a NeetCode link if there is one, or a LeetCode link if not.
@@ -233,7 +237,7 @@ so `buildNeetcodeSlugByLeetcodeNumber` flips it into a `Map` once, when the file
 instead of typing a second reversed table, is **DRY**: a rename can never be added to one table and forgotten in the other.
 
 **When NeetCode adds problems**, add one line: to the rename table if NeetCode's URL name differs from LeetCode's, otherwise to the
-same-name list, and add its number to its topic in `neetcode-topics.ts`. If a sync reports a name in `notMatched`, that's a missing rename.
+same-name list. If it's on the NeetCode roadmap, also add its number to its topic in `neetcode-topics.ts`. If a sync reports a name in `notMatched`, that's a missing rename.
 
 ### `neetcode-topics.ts`
 
@@ -244,7 +248,8 @@ a `name` (shown in the dropdown, like `"Heap / Priority Queue"`) and its `proble
 it was built from NeetCode's `.problemSiteData.json`, where every problem has a `pattern` field naming its topic.
 NeetCode files each problem under exactly one topic, and a test checks that no number appears twice.
 
-Problems NeetCode doesn't have aren't in any topic, so they get **`OTHER_TOPIC_ID`** (`"other"`). Every card always has a topic,
+Problems that aren't on the roadmap aren't in any topic, so they get **`OTHER_TOPIC_ID`** (`"other"`). That includes LeetCode-only
+problems and NeetCode problems that are on neetcode.io but not on the roadmap (like 229. Majority Element II). Every card always has a topic,
 which means "All topics" is always exactly the sum of the other choices.
 
 The table is stored **topic → problems**, because that's how the roadmap reads and how you'd add to it. Looking a problem up needs

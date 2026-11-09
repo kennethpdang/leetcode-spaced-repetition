@@ -107,6 +107,11 @@ describe("problem links", () => {
     expect(getProblemUrl(704, "binary-search")).toBe("https://neetcode.io/problems/binary-search");
   });
 
+  it("links NeetCode problems that aren't on the roadmap to NeetCode", () => {
+    expect(getProblemUrl(229, "majority-element-ii")).toBe("https://neetcode.io/problems/majority-element-ii");
+    expect(getProblemUrl(1, "two-sum")).not.toContain("leetcode.com");
+  });
+
   it("links problems NeetCode doesn't have to LeetCode", () => {
     expect(getProblemUrl(1000, "minimum-cost-to-merge-stones")).toBe(
       "https://leetcode.com/problems/minimum-cost-to-merge-stones/",
