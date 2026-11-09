@@ -46,10 +46,23 @@ describe("NeetCode topics", () => {
     }
   });
 
-  it("gives every NeetCode problem a real topic", () => {
-    const neetcodeNumbers = [...Object.values(LEETCODE_NUMBER_BY_NEETCODE_SLUG), ...LEETCODE_NUMBERS_WITH_SAME_NEETCODE_SLUG];
-    for (let numberIndex = 0; numberIndex < neetcodeNumbers.length; numberIndex++) {
-      expect(getTopicId(neetcodeNumbers[numberIndex])).not.toBe(OTHER_TOPIC_ID);
+  it("gives every renamed NeetCode problem a real topic", () => {
+    const renamedNumbers = Object.values(LEETCODE_NUMBER_BY_NEETCODE_SLUG);
+    for (let numberIndex = 0; numberIndex < renamedNumbers.length; numberIndex++) {
+      expect(getTopicId(renamedNumbers[numberIndex])).not.toBe(OTHER_TOPIC_ID);
+    }
+  });
+
+  it("only uses topic numbers that NeetCode has", () => {
+    const neetcodeNumbers = new Set<number>([
+      ...Object.values(LEETCODE_NUMBER_BY_NEETCODE_SLUG),
+      ...LEETCODE_NUMBERS_WITH_SAME_NEETCODE_SLUG,
+    ]);
+    for (let topicIndex = 0; topicIndex < NEETCODE_TOPICS.length; topicIndex++) {
+      const problemNumbers = NEETCODE_TOPICS[topicIndex].problemNumbers;
+      for (let numberIndex = 0; numberIndex < problemNumbers.length; numberIndex++) {
+        expect(neetcodeNumbers.has(problemNumbers[numberIndex])).toBe(true);
+      }
     }
   });
 

@@ -495,8 +495,8 @@ export const NEETCODE_TOPICS: NeetcodeTopic[] = [
       1547, // Minimum Cost to Cut a Stick
       1639, // Number of Ways to Form a Target String Given a Dictionary
       1866, // Number of Ways to Rearrange Sticks With K Sticks Visible
+      1911, // Maximum Alternating Subsequence Sum (NeetCode's data still uses its old number, 5782)
       2218, // Maximum Value of K Coins from Piles
-      5782, // Maximum Alternating Subsequence Sum
     ],
   },
   {
